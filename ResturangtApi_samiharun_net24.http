@@ -1,0 +1,6 @@
+@ResturangtApi_samiharun_net24_HostAddress = http://localhost:5169
+
+GET {{ResturangtApi_samiharun_net24_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
