@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ResturangtApi_samiharun_net24.Models;
 using ResturangtApi_samiharun_net24.Models.Data;
@@ -10,6 +11,7 @@ namespace ResturangtApi_samiharun_net24.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize]
     public class BokningarController : ControllerBase
     {
         private readonly ResturangDbContext _db;
@@ -42,26 +44,39 @@ namespace ResturangtApi_samiharun_net24.Controllers
             {
                 if (string.IsNullOrWhiteSpace(dto.KundNamn) || string.IsNullOrWhiteSpace(dto.KundTelefon))
                     return BadRequest("Ange kundnamn och telefon eller KundId");
+
                 var nyKund = new Kunder { Name = dto.KundNamn!, Phone = dto.KundTelefon! };
                 _db.Kunder.Add(nyKund);
                 await _db.SaveChangesAsync();
                 kundId = nyKund.Id;
             }
 
-            var bokning = new Bokning { BordId = dto.BordId, KundId = kundId, StartTime = dto.StartTime, AntalGaster = dto.AntalGaster };
+            var bokning = new Bokning
+            {
+                BordId = dto.BordId,
+                KundId = kundId,
+                StartTime = dto.StartTime,
+                AntalGaster = dto.AntalGaster
+            };
             _db.Bokningar.Add(bokning);
             await _db.SaveChangesAsync();
+
             return CreatedAtAction(nameof(GetBokning), new { id = bokning.Id }, bokning);
         }
 
-        // GET metod för CreatedAtAction
         [HttpGet("{id}")]
         public async Task<IActionResult> GetBokning(int id)
         {
-            var bokning = await _db.Bokningar.FindAsync(id);
+            var bokning = await _db.Bokningar
+                .Include(b => b.Bord)
+                .Include(b => b.Kunder)
+                .AsNoTracking()
+                .FirstOrDefaultAsync(b => b.Id == id);
+
             if (bokning == null) return NotFound();
             return Ok(bokning);
         }
     }
 }
+
 

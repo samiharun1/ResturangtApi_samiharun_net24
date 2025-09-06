@@ -1,6 +1,7 @@
 
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.OpenApi.Models;
 using ResturangtApi_samiharun_net24.Models;
 using ResturangtApi_samiharun_net24.Models.Data;
 using ResturangtApi_samiharun_net24.Models.Security;
@@ -14,16 +15,42 @@ namespace ResturangtApi_samiharun_net24
         {
             var builder = WebApplication.CreateBuilder(args);
 
-            // Add services to the container.
             builder.Services.AddControllers();
-            builder.Services.AddEndpointsApiExplorer();
-            builder.Services.AddSwaggerGen();
 
+            builder.Services.AddEndpointsApiExplorer();
+            builder.Services.AddSwaggerGen(c =>
+            {
+                c.SwaggerDoc("v1", new OpenApiInfo { Title = "Restaurang API", Version = "v1" });
+
+                c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+                {
+                    Name = "Authorization",
+                    Type = SecuritySchemeType.ApiKey,
+                    Scheme = "Bearer",
+                    BearerFormat = "JWT",
+                    In = ParameterLocation.Header,
+                    Description = "Skriv 'Bearer' följt av ditt token"
+                });
+
+                c.AddSecurityRequirement(new OpenApiSecurityRequirement
+                {
+                    {
+                        new OpenApiSecurityScheme
+                        {
+                            Reference = new OpenApiReference { Type = ReferenceType.SecurityScheme, Id = "Bearer" }
+                        },
+                        Array.Empty<string>()
+                    }
+                });
+            });
+
+            // DB
             builder.Services.AddDbContext<ResturangDbContext>(options =>
                 options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
             builder.Services.AddScoped<BokningService>();
 
+            // JWT Auth
             builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                 .AddJwtBearer(options =>
                 {
@@ -35,7 +62,9 @@ namespace ResturangtApi_samiharun_net24
                         ValidateIssuerSigningKey = true,
                         ValidIssuer = builder.Configuration["Jwt:Issuer"],
                         ValidAudience = builder.Configuration["Jwt:Audience"],
-                        IssuerSigningKey = new Microsoft.IdentityModel.Tokens.SymmetricSecurityKey(System.Text.Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!)),
+                        IssuerSigningKey = new Microsoft.IdentityModel.Tokens.SymmetricSecurityKey(
+                            System.Text.Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!)
+                        ),
                         ClockSkew = TimeSpan.Zero
                     };
                 });
@@ -44,7 +73,7 @@ namespace ResturangtApi_samiharun_net24
 
             var app = builder.Build();
 
-            // Configure the HTTP request pipeline.
+            // Swagger UI
             if (app.Environment.IsDevelopment())
             {
                 app.UseSwagger();
@@ -56,11 +85,10 @@ namespace ResturangtApi_samiharun_net24
             app.UseAuthorization();
             app.MapControllers();
 
-            // Seed: skapa admin och några bord/meny om tomt
             using (var scope = app.Services.CreateScope())
             {
                 var db = scope.ServiceProvider.GetRequiredService<ResturangDbContext>();
-                await db.Database.MigrateAsync(); // <-- async
+                await db.Database.MigrateAsync();
 
                 if (!db.Admins.Any())
                 {
@@ -85,7 +113,7 @@ namespace ResturangtApi_samiharun_net24
                     );
                 }
 
-                await db.SaveChangesAsync(); // <-- async
+                await db.SaveChangesAsync();
             }
 
             app.Run();
