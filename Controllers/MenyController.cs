@@ -4,6 +4,28 @@ using Microsoft.EntityFrameworkCore;
 using ResturangtApi_samiharun_net24.Models;
 using ResturangtApi_samiharun_net24.Models.Data;
 
+
+// Syftet med en API‑controller:
+// Ta emot inkommande HTTP-anrop (GET, POST, PUT, DELETE)
+// Validera inkommande data
+// Anropa tjänster (t.ex. BokningService) eller databasen
+// Returnera rätt JSON‑svar eller felmeddelanden
+//
+// Exempel: BokningarController:
+// GET hämta alla bokningar eller en specifik bokning
+// POST skapa en ny bokning
+// PUT uppdatera en befintlig bokning
+// DELETE ta bort en bokning
+//
+// Controller fungerar som länken mellan frontend och databasen**.
+//
+// Viktigt att förstå:
+// [HttpGet], [HttpPost], [HttpPut], [HttpDelete] anger 
+// vilken typ av HTTP-anrop metoden hanterar.
+// IActionResult används för att returnera olika typer av 
+// svar: t.ex. Ok, NotFound, BadRequest, Conflict.
+// DTOs används för att skicka/ta emot data från klienten.
+
 namespace ResturangtApi_samiharun_net24.Controllers
 {
     [Route("api/[controller]")]
@@ -15,9 +37,11 @@ namespace ResturangtApi_samiharun_net24.Controllers
         public MenyController(ResturangDbContext db) => _db = db;
 
         [HttpGet]
+        [AllowAnonymous]
         public async Task<IActionResult> GetAll() => Ok(await _db.Meny.AsNoTracking().ToListAsync());
 
         [HttpGet("{id}")]
+        [AllowAnonymous]
         public async Task<IActionResult> GetById(int id)
         {
             var item = await _db.Meny.FindAsync(id);

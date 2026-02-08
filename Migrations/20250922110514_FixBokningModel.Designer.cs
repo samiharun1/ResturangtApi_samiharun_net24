@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using ResturangtApi_samiharun_net24.Models.Data;
 
@@ -11,9 +12,11 @@ using ResturangtApi_samiharun_net24.Models.Data;
 namespace ResturangtApi_samiharun_net24.Migrations
 {
     [DbContext(typeof(ResturangDbContext))]
-    partial class ResturangDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250922110514_FixBokningModel")]
+    partial class FixBokningModel
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

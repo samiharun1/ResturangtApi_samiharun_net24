@@ -26,6 +26,16 @@ namespace ResturangtApi_samiharun_net24.Controllers
             return Ok(bord);
         }
 
+        [HttpGet("available")]
+        [AllowAnonymous]
+        public async Task<IActionResult> GetAvailableBord([FromQuery] string date, [FromQuery] string time, [FromQuery] int antalGaster)
+        {
+            var availableBord = await _db.Bord
+                .Where(b => b.Kapacitet >= antalGaster)
+                .ToListAsync();
+            return Ok(availableBord);
+        }
+
         [HttpPost]
         public async Task<IActionResult> Create(Bord bord)
         {
@@ -56,4 +66,3 @@ namespace ResturangtApi_samiharun_net24.Controllers
         }
     }
 }
-

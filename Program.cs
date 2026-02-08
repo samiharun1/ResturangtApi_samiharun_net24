@@ -1,4 +1,3 @@
-
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
@@ -6,6 +5,15 @@ using ResturangtApi_samiharun_net24.Models;
 using ResturangtApi_samiharun_net24.Models.Data;
 using ResturangtApi_samiharun_net24.Models.Security;
 using ResturangtApi_samiharun_net24.Models.Services;
+
+// Den här filen startar hela ASP.NET Core-applikationen.
+// Den konfigurerar:
+// 1. Controllers (API-endpoints)
+// 2. Swagger (för att testa API:t i webbläsaren)
+// 3. CORS (så att React-appen kan prata med API:t)
+// 4. Databasen med Entity Framework Core
+// 5. JWT-autentisering (säker inloggning med token)
+// 6. Seed-data (skapar admin, bord och meny om det inte finns)
 
 namespace ResturangtApi_samiharun_net24
 {
@@ -20,8 +28,9 @@ namespace ResturangtApi_samiharun_net24
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen(c =>
             {
-                c.SwaggerDoc("v1", new OpenApiInfo { Title = "Restaurang API", Version = "v1" });
+                c.SwaggerDoc("v1", new OpenApiInfo { Title = "Restaurant API", Version = "v1" });
 
+                // JWT configuration for Swagger
                 c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
                 {
                     Name = "Authorization",
@@ -29,7 +38,7 @@ namespace ResturangtApi_samiharun_net24
                     Scheme = "Bearer",
                     BearerFormat = "JWT",
                     In = ParameterLocation.Header,
-                    Description = "Skriv 'Bearer' följt av ditt token"
+                    Description = "Write 'Bearer' followed by your token"
                 });
 
                 c.AddSecurityRequirement(new OpenApiSecurityRequirement
@@ -44,13 +53,24 @@ namespace ResturangtApi_samiharun_net24
                 });
             });
 
-            // DB
+            // Enable CORS for React
+            builder.Services.AddCors(options =>
+            {
+                options.AddDefaultPolicy(policy =>
+                {
+                    policy.WithOrigins("http://localhost:5173")
+                          .AllowAnyHeader()
+                          .AllowAnyMethod();
+                });
+            });
+
+            // Database
             builder.Services.AddDbContext<ResturangDbContext>(options =>
                 options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
             builder.Services.AddScoped<BokningService>();
 
-            // JWT Auth
+            // JWT Authentication
             builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                 .AddJwtBearer(options =>
                 {
@@ -80,11 +100,15 @@ namespace ResturangtApi_samiharun_net24
                 app.UseSwaggerUI();
             }
 
+            // Enable CORS
+            app.UseCors();
+
             app.UseHttpsRedirection();
             app.UseAuthentication();
             app.UseAuthorization();
             app.MapControllers();
 
+            // Seed default data
             using (var scope = app.Services.CreateScope())
             {
                 var db = scope.ServiceProvider.GetRequiredService<ResturangDbContext>();
@@ -108,8 +132,8 @@ namespace ResturangtApi_samiharun_net24
                 if (!db.Meny.Any())
                 {
                     db.Meny.AddRange(
-                        new Meny { Name = "Kanelbulle", Price = 30, Description = "Nygräddad", IsPopular = true },
-                        new Meny { Name = "Cappuccino", Price = 35, Description = "Skummig kaffe", IsPopular = true }
+                        new Meny { Name = "Cinnamon Roll", Price = 30, Description = "Freshly baked", IsPopular = true },
+                        new Meny { Name = "Cappuccino", Price = 35, Description = "Foamy coffee", IsPopular = true }
                     );
                 }
 
